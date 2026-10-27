@@ -5,7 +5,7 @@
 Here is the code for the paper **[Modeling Emotional Stimulus Responses from Emotion via Deep Learning Model for Generalizable Audio-Text Depression Detection](https://)**.
 
 
-This paper is currently being submitted to the Transactions on Emotional Computing. After the review process is completed, we will upload the complete code.
+This paper is currently being submitted to the Transactions on Affective Computing. After the review process is completed, we will upload the complete code.
 
 ## 📖 Datasets
 The experiments in this paper are based on the CMDC, MIDD and MOMDA datasets.
