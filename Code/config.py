@@ -47,8 +47,6 @@ class Config:
     AUDIO_DIM = 88 
     TEXT_DIM = 768
     NUM_CLASSES = 2
-
-    # midd:18, modma:9  (跨刺激：midd:3 modma:6) (跨数据集：cmdc=modma=midd=9)
     CurrentStimus = None  
     
     # 学习率优化
