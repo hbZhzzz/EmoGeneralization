@@ -81,12 +81,12 @@ class Config:
     # ================= 损失函数权重 =================
     ## teachaer loss 
     SCALE_MSE_TEACHER = 100.0 
-    SCALE_MSE_STUDENT = 100.0 # 100，modma-acc=0.98， f1=0.98, 10 modma-acc=0.96
+    SCALE_MSE_STUDENT = 100.0 
 
  
     W_CONTRA = 5.0 #default= 5.0
-    KLD_WEIGHT = 0.05  #  phase1阶段，default= 0.05
-    KLD_START_EPOCH = 5 # phase1中，计算KL损失的退火epoch数, 在该epoch前，kl权重为0.0。
+    KLD_WEIGHT = 0.05  
+    KLD_START_EPOCH = 5 
     KLD_ANNEAL_EPOCHS = 20 
     FREE_BITS = 0.1
 
