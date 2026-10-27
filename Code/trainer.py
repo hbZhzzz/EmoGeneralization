@@ -139,9 +139,7 @@ class Trainer:
                     labels = batch['labels'].to(self.device)     
                     stim_ids = batch['stim_ids'].to(self.device) 
                     
-                    # Forward (Eval 模式)
-                    # 注意：虽然这里传入了 emo_seqs，但 eval() 模式下 Decoder 使用自回归生成上一帧
-                    # 传入 emo_seqs 主要是为了让 Encoder 计算 Posterior (重构能力测试)
+                    # Forward 
                     recon_emo, (post_mu, post_logvar), (prior_mu, prior_logvar), aux_class_logits = self.teacher(stim_embeds, emo_seqs, ratio)
                     
                     # Validation Loss 
