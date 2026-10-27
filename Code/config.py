@@ -9,7 +9,7 @@ class Config:
     PRIVATE_DATA_PATH_TRAIN = os.path.join(Project, 'data/private_data_train.pt')
     PRIVATE_DATA_PATH_TEST = os.path.join(Project, 'data/private_data_test.pt')
 
-    DATASET_NMAE = 'midd'  # 仅在同域测试实验内有效，验证时需同步要修改
+    DATASET_NMAE = 'midd' 
     PUBLIC_DATA_PATH = os.path.join(Project, f'data/public_data_{DATASET_NMAE}.pt')
     
     # SAVE_DIR = './checkpoints/'
