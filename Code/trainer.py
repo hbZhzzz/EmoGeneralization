@@ -19,35 +19,6 @@ from losses import LossFactory
 from teacher import TeacherNetwork
 from student import StudentEncoder
 from model import ECAN
-# from utils.visualizer import AggregateVisualizer 
-
-
-# def setup_logger(save_dir):
-#     # 1. 创建日志目录
-#     if not os.path.exists(save_dir):
-#         os.makedirs(save_dir)
-    
-#     # 2. 获取 logger 实例
-#     logger = logging.getLogger()
-#     logger.setLevel(logging.INFO)
-    
-#     # 防止重复添加 handler（如果你在脚本中多次调用 setup_logger）
-#     if not logger.handlers:
-#         # 3. 创建一个 Formatter，定义日志格式
-#         formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
-
-#         # 4. 创建 FileHandler，用于写入文件
-#         log_file = os.path.join(save_dir, "train_log.txt")
-#         file_handler = logging.FileHandler(log_file, mode='a', encoding='utf-8')
-#         file_handler.setFormatter(formatter)
-#         logger.addHandler(file_handler)
-
-#         # 5. 创建 StreamHandler，用于输出到控制台
-#         console_handler = logging.StreamHandler()
-#         console_handler.setFormatter(formatter)
-#         logger.addHandler(console_handler)
-    
-#     return logger
 
 
 # 配置简单的日志打印格式
@@ -57,8 +28,7 @@ logger = logging.getLogger(__name__)
 
 class Trainer:
     """
-    H-EDAPT 全流程训练管理器。
-    负责 Phase 1 (Teacher), Phase 2 (Distillation), Phase 3 (Classification) 的调度。
+    Phase 1 (Teacher), Phase 2 (Distillation), Phase 3 (Classification)
     """
     def __init__(self, device):
         self.device = device
@@ -79,13 +49,13 @@ class Trainer:
     # =================================================================
     def _get_teacher_forcing_ratio(self, epoch, total_epochs):
         
-        k = 20.0 # 衰减速度控制
+        k = 20.0 
         ratio = k / (k + np.exp(epoch / k))
         
-        # 或者使用更简单的线性退火
+
         start_ratio = 1.0
         end_ratio = 0.0
-        decay_epochs = 20 # 在前20个epoch内衰减完
+        decay_epochs = 20 
         
         if epoch < decay_epochs:
             ratio = start_ratio - (start_ratio - end_ratio) * (epoch / decay_epochs)
@@ -101,10 +71,9 @@ class Trainer:
         # 1. 初始化模型
         self.teacher = TeacherNetwork().to(self.device)
         optimizer = optim.Adam(self.teacher.parameters(), lr=Config.LR_TEACHER)
-        # 这里的 scheduler 改为监控 val_loss
         scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=5)
         
-        best_val_loss = float('inf') # 用于记录最好的验证集 Loss
+        best_val_loss = float('inf') # 记录最好的验证集 Loss
         
         for epoch in range(epochs):
             # ==========================
@@ -128,8 +97,6 @@ class Trainer:
                 
                 # Forward
                 ratio = self._get_teacher_forcing_ratio(epoch, epochs)
-
-                # train 模式下，Decoder可能会使用 Teacher Forcing (取决于 teacher.py 实现)
                 recon_emo, (post_mu, post_logvar), (prior_mu, prior_logvar), aux_class_logits = self.teacher(stim_embeds, emo_seqs, ratio)
                 
                 # Loss Calculation
@@ -148,10 +115,8 @@ class Trainer:
                 
                 # Logging Stats
                 total_loss += loss.item()
-                total_recon += loss_dict['recon_loss'] # 确保转为 float
+                total_recon += loss_dict['recon_loss'] 
                 total_kld += loss_dict['kld_loss']
-                # total_corr += loss_dict['corr_loss']
-                # total_cls += loss_dict['cls_loss']
                 total_contra += loss_dict['contra_loss']
 
             avg_train_loss = total_loss / len(train_loader)
@@ -159,27 +124,27 @@ class Trainer:
             # ==========================
             #      Validation Loop
             # ==========================
-            self.teacher.eval() # 关闭 Teacher Forcing -> 自回归生成测试！
+            self.teacher.eval() # 关闭 Teacher Forcing
             val_loss = 0
             val_steps = 0
 
                        
-            # 用于后续可能需要绘图的数据容器 
+            # 数据容器 
             val_real, val_recon, val_labels, val_stims = [], [], [], []
             
             with torch.no_grad():
                 for i, batch in enumerate(test_loader):
                     stim_embeds = batch['stim_embeds'].to(self.device)
                     emo_seqs = batch['emo_seqs'].to(self.device)
-                    labels = batch['labels'].to(self.device)     # 必须有 label 用于绘图验证
-                    stim_ids = batch['stim_ids'].to(self.device) # 必须有 stim_id 用于绘图验证
+                    labels = batch['labels'].to(self.device)     
+                    stim_ids = batch['stim_ids'].to(self.device) 
                     
                     # Forward (Eval 模式)
-                    # 注意：虽然这里传入了 emo_seqs，但 eval() 模式下 Decoder 应该使用自回归生成上一帧
+                    # 注意：虽然这里传入了 emo_seqs，但 eval() 模式下 Decoder 使用自回归生成上一帧
                     # 传入 emo_seqs 主要是为了让 Encoder 计算 Posterior (重构能力测试)
                     recon_emo, (post_mu, post_logvar), (prior_mu, prior_logvar), aux_class_logits = self.teacher(stim_embeds, emo_seqs, ratio)
                     
-                    # Validation Loss (衡量泛化能力)
+                    # Validation Loss 
                     loss_dict = self.loss_factory.teacher_loss(
                         recon_emo, emo_seqs, 
                         (post_mu, post_logvar), (prior_mu, prior_logvar), 
@@ -189,7 +154,7 @@ class Trainer:
                     val_loss += loss_dict['loss'].item()
                     val_steps += 1
                     
-                    # --- 收集全量数据用于绘图  ---
+                    # --- 收集全量数据 ---
                     val_real.append(emo_seqs.cpu().numpy())
                     val_recon.append(recon_emo.cpu().numpy())
                     val_labels.append(labels.cpu().numpy())
@@ -197,7 +162,7 @@ class Trainer:
 
             avg_val_loss = val_loss / val_steps
 
-            # --- 收集全量数据用于绘图  ---
+            # --- 收集全量数据  ---
             all_real = np.concatenate(val_real, axis=0)   # (Total_Val_Samples, 50, 7)
             all_recon = np.concatenate(val_recon, axis=0) # (Total_Val_Samples, 50, 7)
             all_labels = np.concatenate(val_labels, axis=0)
@@ -239,7 +204,7 @@ class Trainer:
         self.teacher.load_state_dict(torch.load(teacher_path))
         self.teacher.eval() 
         for param in self.teacher.parameters():
-            param.requires_grad = False # 冻结 Teacher 的所有梯度，只当做“评委”
+            param.requires_grad = False # 冻结 Teacher 的所有梯度
             
         # 2. 初始化 Student
         self.student = StudentEncoder().to(self.device)
@@ -258,30 +223,25 @@ class Trainer:
             train_sem = 0
             train_contra = 0
             
-            # 进度条可选，为了日志清晰这里用 logger
             for batch in train_loader:
-                # Private Dataset 必须包含 Audio/Text
                 audio_feats = batch['audio_feats'].to(self.device) # (K, 1, D)
                 text_feats = batch['text_feats'].to(self.device)   # (K, 1, D)
                 stim_embeds = batch['stim_embeds'].to(self.device) # (K, 768)
-                emo_seqs = batch['emo_seqs'].to(self.device)       # (K, T, 7) - Teacher 的参考答案
+                emo_seqs = batch['emo_seqs'].to(self.device)       # (K, T, 7) 
                 labels = batch['labels'].to(self.device) 
                 
                 optimizer.zero_grad()
                 
                 # 1. Teacher Generate Targets (No Grad)
-                # Teacher 看着“答案”(emo_seqs) 生成“真理”(Posterior Z)
+                # Teacher 看(emo_seqs) 生成(Posterior Z)
                 with torch.no_grad():
                     _, (t_post_mu, t_post_logvar), _, _ = self.teacher(stim_embeds, emo_seqs)
                 
                 # 2. Student Predicts (Grad)
-                # Student 看着“题目”(Audio/Text) 猜测 Z 分布
-                # 注意：Student 必须尽量去拟合 Teacher 的 Posterior，而不是 Prior
+                # Student 猜测 Z 分布
                 s_z, s_mu, s_logvar, _ = self.student(audio_feats, text_feats, stim_embeds)
                 
-                # 3. Semantic Reconstruction (通过 Teacher Decoder)
-                # 让 Student 的 Z 通过 Teacher 的 Decoder 画图
-                # teacher_forcing_ratio=0.0: 强迫 Student 生成完整序列，不依赖 GT，这样 Loss 才能反映 Student 的真实水平
+                # 3. Semantic Reconstruction
                 s_recon_emo = self.teacher.decode(z=s_z, stim_embeds=stim_embeds, emo_seqs=None, teacher_forcing_ratio=0.0)
 
                 aux_class_logits = self.teacher.aux_classifier(s_mu)
@@ -300,7 +260,7 @@ class Trainer:
                 optimizer.step()
                 
                 train_loss += loss.item()
-                train_align += loss_dict.get('align_loss', 0) # 对应 keys 视 losses.py 而定
+                train_align += loss_dict.get('align_loss', 0)
                 train_sem += loss_dict.get('sem_loss', 0)
                 train_contra += loss_dict.get('contra', 0)
             
@@ -329,15 +289,7 @@ class Trainer:
 
                     # 2. Student Prediction
                     s_z, s_mu, s_logvar, _ = self.student(audio_feats, text_feats, stim_embeds)
-                    
-                    if torch.isnan(s_z).any():
-                        print("IN model!!! CRITICAL: NaN detected in Student Output (s_z) !!!")
-                    
-                    if torch.isnan(s_mu).any():
-                        print("IN model!!! CRITICAL: NaN detected in Student Output (s_mu) !!!")
-                        
-                    if torch.isnan(s_logvar).any():
-                        print("IN model!!! CRITICAL: NaN detected in Student Output (s_logvar) !!!")
+                
 
                     # 3. Decode
                     s_recon_emo = self.teacher.decode(z=s_z, stim_embeds=stim_embeds, emo_seqs=None, teacher_forcing_ratio=0.0)
@@ -358,7 +310,6 @@ class Trainer:
 
             avg_val_loss = val_loss / len(val_loader)
             avg_val_sem = val_sem_loss / len(val_loader)
-            # avg_val_cls = val_cls_loss / len(val_loader)  
             avg_val_align = val_align_loss / len(val_loader)          
 
             logger.info(f"Epoch {epoch+1:03d} | Train Loss: {avg_train_loss:.4f} (Sem: {avg_train_sem:.4f} align: {avg_train_align:.4f}) | Val Loss: {avg_val_loss:.4f} (Sem: {avg_val_sem:.4f}, align: {avg_val_align:.4f})")
@@ -404,7 +355,6 @@ class Trainer:
 
         # print('LR:', LR)
 
-        # Student LR：消融端到端训练用全 LR，原模式用 /10（实际不更新）
         student_lr = Config.LR_STUDENT if not freeze_student else Config.LR_STUDENT / 10
         optimizer = optim.AdamW([ 
             {'params': self.ecan.student.parameters(), 'lr': student_lr }, 
@@ -419,7 +369,7 @@ class Trainer:
 
         best_val_acc = 0.0
         patience = 0
-        max_patience = Config.Max_patience # 早停耐心值
+        max_patience = Config.Max_patience 
 
         if Config.DETAILA_SAVEA_NAME:
             best_name = f"best_model_seed_{Config.SEED}_lr_{base_lr_agg}_agg_feed_{Config.AGG_FEED_FORWARD}_layer_{Config.AGG_TSF_LAYERS}_nhead_{Config.AGG_N_HEAD}_drop_{Config.AGG_DROPOUT}_align_{Config.COEFFI_ALIGN}_epoch{epochs}"
