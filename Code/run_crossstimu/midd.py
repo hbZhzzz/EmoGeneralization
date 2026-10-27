@@ -1,6 +1,5 @@
 import sys
 import os 
-sys.path.append('/home/zhanghb/MyPaperProgram/MyPaper/EmoGeneralization/code_v14')
 import torch 
 import numpy as np 
 import itertools
