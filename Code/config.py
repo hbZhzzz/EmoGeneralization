@@ -4,7 +4,7 @@ import os
 class Config:
     # ================= 路径配置 =================
     # 数据处理为 .pt 文件
-    Project = '/home/zhanghb/MyPaperProgram/MyPaper/EmoGeneralization/code_v14'
+    Project = 'EmoGeneralization/code'
     PRIVATE_DATA_PATH_ALL = os.path.join(Project, 'data/private_data.pt')
     PRIVATE_DATA_PATH_TRAIN = os.path.join(Project, 'data/private_data_train.pt')
     PRIVATE_DATA_PATH_TEST = os.path.join(Project, 'data/private_data_test.pt')
