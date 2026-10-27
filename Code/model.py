@@ -18,11 +18,6 @@ class ECAN(nn.Module):
     """
     End-to-End 模型封装。
     
-    消融开关：
-        use_teacher:    是否实例化并调用 Teacher（False 时不加载 teacher_phase1 权重，前向不调用 decode）。
-                        消融"无私有数据预训练"时设为 False。
-        freeze_student: 是否冻结 Student 参数。原 Phase 3 默认 True（Student 不可训）。
-                        消融端到端训练时设为 False，Student 与 Aggregator 联合训练。
     """
 
     def __init__(self, pretrained_student_path=None, use_teacher=True, freeze_student=True, noise_z=False):
@@ -36,7 +31,7 @@ class ECAN(nn.Module):
         self.student = StudentEncoder()
         self.aggregator = DepressionAggregator()
 
-        # Teacher 可选（消融模式不实例化，不加载权重）
+        # Teacher 
         if use_teacher:
             self.teacher = TeacherNetwork()
             t_state_dict = torch.load(os.path.join(Config.SAVE_DIR, 'teacher_phase1_best.pth'))
@@ -47,7 +42,7 @@ class ECAN(nn.Module):
             for param in self.teacher.parameters():
                 param.requires_grad = False
         
-        # 如果提供了 Phase 2 训练好的 Student 权重，在这里加载
+        # Phase 2训练好的 Student权重加载
         if pretrained_student_path:
             self.student.load_state_dict(torch.load(pretrained_student_path), strict=True)
             print(f"Loaded pretrained Student from {pretrained_student_path}")
@@ -64,13 +59,13 @@ class ECAN(nn.Module):
 
     def forward(self, audio_feats, text_feats, stim_embeds, mask):
         """
-        End-to-End 前向传播 (Phase 3 逻辑)
+        End-to-End 前向传播 
         
         Input Shapes (来自 PublicDataset):
             audio_feats: (Batch, N_max, 1, D_aud)
             text_feats:  (Batch, N_max, 1, D_txt)
             stim_embeds: (Batch, N_max, 768)
-            mask:        (Batch, N_max) - 指示哪些是 Pad
+            mask:        (Batch, N_max) 
         """
         batch_size, n_max = stim_embeds.size(0), stim_embeds.size(1)
         # ==========================================
@@ -84,7 +79,7 @@ class ECAN(nn.Module):
         # ==========================================
         # Step 2: Student Processing
         # ==========================================
-        # freeze_student=True: 关闭梯度，eval 模式（保持原 Phase 3 行为）
+        # freeze_student=True: 关闭梯度，eval 模式
         # freeze_student=False: 端到端训练，Student 参与反向传播
         if self.freeze_student:
             with torch.no_grad():
@@ -93,13 +88,13 @@ class ECAN(nn.Module):
         else:
             s_z, s_mu, s_logvar, student_cls_out = self.student(flat_audio, flat_text, flat_stim, flat_mask)
         
-        # Teacher.decode 生成 recon_emos（消融模式 use_teacher=False 时跳过）
+        # Teacher.decode 生成 recon_emos
         if self.use_teacher:
             with torch.no_grad():
                 recon_emos = self.teacher.decode(z=s_z, stim_embeds=flat_stim, emo_seqs=None, teacher_forcing_ratio=0.0)   # shape:(B*N, emo_len, 7)
             recon_emos = recon_emos.view(batch_size, n_max, -1, 7)  # shape:(B, N, emo_len, 7)
         else:
-            recon_emos = None  # Aggregator 不使用 emo_seqs，传 None 即可
+            recon_emos = None  
         
         # 对student_cls_out进行处理
         student_cls_out = student_cls_out.view(batch_size, n_max, -1)  # shape: [B,N,768]
