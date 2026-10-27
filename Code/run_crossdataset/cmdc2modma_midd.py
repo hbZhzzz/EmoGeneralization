@@ -1,6 +1,6 @@
 import sys
 import os 
-sys.path.append('/home/zhanghb/MyPaperProgram/MyPaper/EmoGeneralization/code_v14')
+
 import torch 
 import numpy as np 
 import itertools
@@ -74,7 +74,7 @@ if __name__ == '__main__':
 
     # if you need to evulate our model:
     val_name = 'modma_midd'
-    best_model_dir = '/home/zhanghb/MyPaperProgram/MyPaper/EmoGeneralization/code_v14/run_crossdataset/checkpoints/best'
+    best_model_dir = '/home/zhanghb/MyPaperProgram/MyPaper/EmoGeneralization/code/run_crossdataset/checkpoints/best'
     
     best_model_path = os.path.join(best_model_dir, 'cmdc2modma_midd_best_model_seed_2026_lr_0.0005_agg_feed_256_layer_1_nhead_1_drop_0.5_align_0.01_epoch50_acc0.6136.pth')
     
