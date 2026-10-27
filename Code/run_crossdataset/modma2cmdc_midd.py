@@ -1,6 +1,5 @@
 import sys
 import os 
-sys.path.append('/home/zhanghb/MyPaperProgram/MyPaper/EmoGeneralization/code_v14')
 import torch 
 import numpy as np 
 import itertools
@@ -69,16 +68,9 @@ def evaluate_model(best_model_path, val_dataset_name):
 if __name__ == '__main__':
     Config.AGG_LAYER_PRINT=False
     Config.CurrentStimus=9
-    # acc, f1 = run(dataset_name1='modma', dataset_name2='cmdc_midd', LR=1e-3, epochs=50, CrossData=True)
+    acc, f1 = run(dataset_name1='modma', dataset_name2='cmdc_midd', LR=1e-3, epochs=50, CrossData=True)
 
 
-    # if you need to evulate our model:
-    val_name = 'cmdc_midd'
-    best_model_dir = '/home/zhanghb/MyPaperProgram/MyPaper/EmoGeneralization/code_v14/run_crossdataset/checkpoints/best'
-    
-    best_model_path = os.path.join(best_model_dir, 'modma2cmdc_midd_best_model_seed_2026_lr_0.001_agg_feed_256_layer_1_nhead_1_drop_0.5_align_0.01_epoch50_acc0.7408.pth')
-    
-    evaluate_model(best_model_path=best_model_path, val_dataset_name=val_name)
 
 
     
