@@ -33,7 +33,7 @@ class Config:
     D_MODEL = 768        # BERT/ 的输出维度
     Z_DIM = 64           # 潜变量维度
     EMO_DIM = 7          # 情绪维度 (7类基本情绪)
-    AGG_DIM = 128        # 128 (聚合层的隐藏维度，通常比 Z 大一点)
+    AGG_DIM = 128       
     # 序列相关
     MAX_EMO_LEN = 100     # 教师网络：情绪序列最大帧数
     
