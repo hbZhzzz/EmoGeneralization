@@ -6,8 +6,7 @@ class AggregateVisualizer:
     def __init__(self, save_dir):
         self.save_dir = save_dir
         os.makedirs(save_dir, exist_ok=True)
-        # 定义要关注的情绪维度 (根据你的 config 调整)
-        # 假设 3: Happy, 5: Sad
+       
         self.target_emotions = {
             3: "Happy", 
             5: "Sad"
@@ -17,7 +16,7 @@ class AggregateVisualizer:
         """
         绘制群体级动力学对比图 (Mean + Std)
         """
-        # 1. 选取几个典型的 Stimulus ID 进行展示 (比如样本量最多的前3个)
+        # 1. 选取几个典型的 Stimulus ID 进行展示 
         unique_stims, counts = np.unique(all_stim_ids, return_counts=True)
         top_stims = unique_stims[np.argsort(-counts)][:3] # 选前3个最常见的刺激
         
@@ -74,19 +73,18 @@ class AggregateVisualizer:
         
         # 计算统计量
         real_mean = np.mean(group_real, axis=0)
-        # real_std = np.std(group_real, axis=0) # 真实数据的波动通常很大，画出来会很乱，这里仅画重构的波动
         
         recon_mean = np.mean(group_recon, axis=0)
         recon_std = np.std(group_recon, axis=0)
         
         x = np.arange(len(real_mean))
         
-        # 1. 画真实均值 (虚线) - 作为 Ground Truth 参考
+        # 1. 画真实均值 (虚线)
         ax.plot(x, real_mean, color=color, linestyle='--', alpha=0.5, linewidth=1)
         
         # 2. 画重构均值 (实线)
         ax.plot(x, recon_mean, color=color, label=f'{label_name} (Recon)', linewidth=2)
         
-        # 3. 画重构波动 (阴影) - 这能看出模型是否学到了多样性
+        # 3. 画重构波动 (阴影) 
         ax.fill_between(x, recon_mean - recon_std, recon_mean + recon_std, 
                         color=color, alpha=0.15)
